@@ -17,7 +17,8 @@
 
 using System;
 using System.Buffers;
-using System.Runtime.Serialization;
+using System.Collections.Concurrent;
+using Lucene.Net.Index;
 using IndexFileNameFilter = Lucene.Net.Index.IndexFileNameFilter;
 
 namespace Lucene.Net.Store
@@ -43,6 +44,8 @@ namespace Lucene.Net.Store
         [Serializable]
     public abstract class Directory : System.IDisposable
 	{
+        private readonly ConcurrentDictionary<string, Lazy<ArrayHolder>> _termsIndexCachePerSegment = new();
+
 		protected internal volatile bool isOpen = true;
 		
 		/// <summary>Holds the LockFactory instance (implements locking for
@@ -99,11 +102,27 @@ namespace Lucene.Net.Store
 		{
 			return OpenInput(name, state);
 		}
-		
-		/// <summary>Construct a <see cref="Lock" />.</summary>
-		/// <param name="name">the name of the lock file
-		/// </param>
-		public virtual Lock MakeLock(System.String name)
+
+        public virtual ArrayHolder GetCache(Directory directory, string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
+        {
+            var lazyArrayHolder = _termsIndexCachePerSegment.GetOrAdd(name,
+                new Lazy<ArrayHolder>(() => ArrayHolder.GenerateArrayHolder(directory, name, fieldInfos, readBufferSize, indexDivisor, state)));
+
+            return lazyArrayHolder.Value;
+        }
+
+        public virtual void RemoveFromTermsIndexCache(string name)
+        {
+            _termsIndexCachePerSegment.TryRemove(name, out _);
+            //Console.WriteLine($"count: {_termsIndexCachePerSegment.Count}");
+            // intentionally not disposing the cache here since it might be in use by the TemInfosReader instance.
+            // we'll let the finalizer clean it when it isn't in use anymore.
+        }
+
+        /// <summary>Construct a <see cref="Lock" />.</summary>
+        /// <param name="name">the name of the lock file
+        /// </param>
+        public virtual Lock MakeLock(System.String name)
 		{
 			return interalLockFactory.MakeLock(name);
 		}
@@ -133,7 +152,14 @@ namespace Lucene.Net.Store
             Dispose(true);
         }
 
-	    protected abstract void Dispose(bool disposing);
+        protected virtual void Dispose(bool disposing)
+        {
+            Console.WriteLine($"DISPOSING LUCENEVORONDIRECTORY");
+            foreach ((_, Lazy<ArrayHolder> cacheLazy) in _termsIndexCachePerSegment)
+            {
+                cacheLazy.Value.Dispose();
+            }
+        }
 
 	    /// <summary> Set the LockFactory that this Directory instance should
 		/// use for its locking implementation.  Each * instance of
