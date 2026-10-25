@@ -257,7 +257,7 @@ namespace Lucene.Net.Search
 				using (TopScoreDocCollector.Create(10, false))
 				{
 				}
-				using (new HitQueue(NumDocs, false))
+				using (new HitQueue(NumDocs))
 				{
 				}
 
@@ -274,7 +274,7 @@ namespace Lucene.Net.Search
 		public virtual void HitQueueSizeIsTheNumberOfHitsNotTheBound()
 		{
 			// without sentinels the queue reports how many hits it holds, which is what TopDocs() reads out
-			using (var queue = new HitQueue(1000, false))
+			using (var queue = new HitQueue(1000))
 			{
 				Assert.AreEqual(0, queue.Size());
 				for (int i = 0; i < 50; i++)

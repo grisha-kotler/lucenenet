@@ -150,8 +150,7 @@ namespace Lucene.Net.Util
 		/// <summary> Like <see cref="Initialize(int)"/>, but the heap is rented from a pool instead of being allocated,
 		/// and goes back to it when the queue is disposed. Use it for queues that are created per search and sized by
 		/// the number of hits the search may return, so one search after another reuses the same buffers instead of
-		/// allocating and discarding a large array each time. A subclass that supplies sentinel objects gets them, as
-		/// with <see cref="Initialize(int)"/>.
+		/// allocating and discarding a large array each time. Sentinel objects are not supported in this mode.
 		/// </summary>
 		protected internal void InitializePooled(int maxSize)
 		{
@@ -160,17 +159,6 @@ namespace Lucene.Net.Util
 			pooled = true;
 			// the heap is 1-based, so holding maxSize elements takes maxSize + 1 slots; guard the int.MaxValue bound
 			heap = PooledArray<T>.Rent(maxSize == System.Int32.MaxValue ? System.Int32.MaxValue : maxSize + 1);
-			// sentinels fill the slots up to maxSize only: the pool may hand out a larger array than asked for
-			T sentinel = SentinelObject;
-			if (sentinel != null)
-			{
-				heap[1] = sentinel;
-				for (int i = 2; i <= maxSize; i++)
-				{
-					heap[i] = SentinelObject;
-				}
-				size = maxSize;
-			}
 		}
 
 		/// <summary> Returns a pooled heap to its pool. A heap allocated by <see cref="Initialize(int)"/> has nothing to release. </summary>
