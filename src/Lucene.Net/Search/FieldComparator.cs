@@ -1047,23 +1047,6 @@ namespace Lucene.Net.Search
                 get { return values[slot]; }
             }
 
-		    public string[] GetValues()
-		    {
-                var strings = new string[values.Length];
-                for (int i = 0; i < values.Length; i++)
-                {
-                    if (values[i].IsNull)
-                    {
-                        strings[i] = null;
-                        continue;
-                    }
-
-                    strings[i] = values[i].ToString();
-                }
-
-                return strings;
-		    }
-
 		    public int BottomSlot
 		    {
 		        get { return bottomSlot; }
