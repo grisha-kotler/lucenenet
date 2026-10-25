@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Util
@@ -158,7 +159,7 @@ namespace Lucene.Net.Util
 			this.maxSize = maxSize;
 			pooled = true;
 			// the heap is 1-based, so holding maxSize elements takes maxSize + 1 slots; guard the int.MaxValue bound
-			heap = PooledArray<T>.Rent(maxSize == System.Int32.MaxValue ? System.Int32.MaxValue : maxSize + 1);
+			heap = ArrayPool<T>.Shared.Rent(maxSize == System.Int32.MaxValue ? System.Int32.MaxValue : maxSize + 1);
 		}
 
 		/// <summary> Returns a pooled heap to its pool. A heap allocated by <see cref="Initialize(int)"/> has nothing to release. </summary>
@@ -167,8 +168,10 @@ namespace Lucene.Net.Util
 			if (pooled == false || heap == null)
 				return;
 
-			// only slots 1..size can still hold references: Pop clears the slot it vacates and Add writes at size
-			PooledArray<T>.ReturnWithClearing(heap, size + 1);
+			// only slots 1..size can still hold references (Pop clears the slot it vacates and Add writes at size):
+			// clear them so nothing stays alive through the pool, and only them, so returning a large heap stays cheap
+			Array.Clear(heap, 0, Math.Min(size + 1, heap.Length));
+			ArrayPool<T>.Shared.Return(heap);
 			heap = null;
 		}
 

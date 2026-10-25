@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -192,7 +193,7 @@ namespace Lucene.Net.Search
 			
 			internal ByteComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = PooledArray<sbyte>.Rent(numHits);
+				values = ArrayPool<sbyte>.Shared.Rent(numHits);
 				this.field = field;
 				this.parser = (ByteParser) parser;
 			}
@@ -214,7 +215,10 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<sbyte>.Return(values);
+				if (values == null)
+					return;
+
+				ArrayPool<sbyte>.Shared.Return(values);
 				values = null;
 			}
 			
@@ -243,7 +247,7 @@ namespace Lucene.Net.Search
 			
 			internal DocComparator(int numHits)
 			{
-				docIDs = PooledArray<int>.Rent(numHits);
+				docIDs = ArrayPool<int>.Shared.Rent(numHits);
 			}
 			
 			public override int Compare(int slot1, int slot2)
@@ -265,7 +269,10 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<int>.Return(docIDs);
+				if (docIDs == null)
+					return;
+
+				ArrayPool<int>.Shared.Return(docIDs);
 				docIDs = null;
 			}
 			
@@ -301,7 +308,7 @@ namespace Lucene.Net.Search
 			
 			internal DoubleComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = PooledArray<double>.Rent(numHits);
+				values = ArrayPool<double>.Shared.Rent(numHits);
 				this.field = field;
 				this.parser = (DoubleParser) parser;
 			}
@@ -348,7 +355,10 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<double>.Return(values);
+				if (values == null)
+					return;
+
+				ArrayPool<double>.Shared.Return(values);
 				values = null;
 			}
 			
@@ -381,7 +391,7 @@ namespace Lucene.Net.Search
 			
 			internal FloatComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = PooledArray<float>.Rent(numHits);
+				values = ArrayPool<float>.Shared.Rent(numHits);
 				this.field = field;
 				this.parser = (FloatParser) parser;
 			}
@@ -432,7 +442,10 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<float>.Return(values);
+				if (values == null)
+					return;
+
+				ArrayPool<float>.Shared.Return(values);
 				values = null;
 			}
 			
@@ -465,7 +478,7 @@ namespace Lucene.Net.Search
 			
 			internal IntComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = PooledArray<int>.Rent(numHits);
+				values = ArrayPool<int>.Shared.Rent(numHits);
 				this.field = field;
 				this.parser = (IntParser) parser;
 			}
@@ -520,7 +533,10 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<int>.Return(values);
+				if (values == null)
+					return;
+
+				ArrayPool<int>.Shared.Return(values);
 				values = null;
 			}
 			
@@ -553,7 +569,7 @@ namespace Lucene.Net.Search
 			
 			internal LongComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = PooledArray<long>.Rent(numHits);
+				values = ArrayPool<long>.Shared.Rent(numHits);
 				this.field = field;
 				this.parser = (LongParser) parser;
 			}
@@ -604,7 +620,10 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<long>.Return(values);
+				if (values == null)
+					return;
+
+				ArrayPool<long>.Shared.Return(values);
 				values = null;
 			}
 			
@@ -639,7 +658,7 @@ namespace Lucene.Net.Search
 			
 			internal RelevanceComparator(int numHits)
 			{
-				scores = PooledArray<float>.Rent(numHits);
+				scores = ArrayPool<float>.Shared.Rent(numHits);
 			}
 			
 			public override int Compare(int slot1, int slot2)
@@ -662,7 +681,10 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<float>.Return(scores);
+				if (scores == null)
+					return;
+
+				ArrayPool<float>.Shared.Return(scores);
 				scores = null;
 			}
 			
@@ -701,7 +723,7 @@ namespace Lucene.Net.Search
 			
 			internal ShortComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = PooledArray<short>.Rent(numHits);
+				values = ArrayPool<short>.Shared.Rent(numHits);
 				this.field = field;
 				this.parser = (ShortParser) parser;
 			}
@@ -723,7 +745,10 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<short>.Return(values);
+				if (values == null)
+					return;
+
+				ArrayPool<short>.Shared.Return(values);
 				values = null;
 			}
 			
@@ -758,7 +783,7 @@ namespace Lucene.Net.Search
 			
 			internal StringComparatorLocale(int numHits, System.String field, System.Globalization.CultureInfo locale)
 			{
-				values = PooledArray<System.String>.Rent(numHits);
+				values = ArrayPool<System.String>.Shared.Rent(numHits);
 				this.field = field;
 				collator = locale.CompareInfo;
 			}
@@ -809,7 +834,12 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<System.String>.ReturnWithClearing(values, usedSlots);
+				if (values == null)
+					return;
+
+				// the slots that were written hold strings: clear them so nothing stays alive through the pool
+				Array.Clear(values, 0, Math.Min(usedSlots, values.Length));
+				ArrayPool<System.String>.Shared.Return(values);
 				values = null;
 			}
 			
@@ -859,9 +889,9 @@ namespace Lucene.Net.Search
 			
 			public StringOrdValComparator(int numHits, System.String field, int sortPos, bool reversed)
 			{
-				ords = PooledArray<int>.Rent(numHits);
-                values = PooledArray<UnmanagedStringArray.UnmanagedString>.Rent(numHits);
-				readerGen = PooledArray<int>.Rent(numHits);
+				ords = ArrayPool<int>.Shared.Rent(numHits);
+                values = ArrayPool<UnmanagedStringArray.UnmanagedString>.Shared.Rent(numHits);
+				readerGen = ArrayPool<int>.Shared.Rent(numHits);
 				this.sortPos = sortPos;
 				this.reversed = reversed;
 				this.field = field;
@@ -974,11 +1004,14 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<int>.Return(ords);
+				if (ords == null)
+					return;
+
+				ArrayPool<int>.Shared.Return(ords);
 				ords = null;
-				PooledArray<UnmanagedStringArray.UnmanagedString>.Return(values);
+				ArrayPool<UnmanagedStringArray.UnmanagedString>.Shared.Return(values);
 				values = null;
-				PooledArray<int>.Return(readerGen);
+				ArrayPool<int>.Shared.Return(readerGen);
 				readerGen = null;
 			}
 			
@@ -1058,7 +1091,7 @@ namespace Lucene.Net.Search
 			
 			internal StringValComparator(int numHits, System.String field)
 			{
-				values = PooledArray<System.String>.Rent(numHits);
+				values = ArrayPool<System.String>.Shared.Rent(numHits);
 				this.field = field;
 			}
 			
@@ -1109,7 +1142,12 @@ namespace Lucene.Net.Search
 			
 			public override void  Dispose()
 			{
-				PooledArray<System.String>.ReturnWithClearing(values, usedSlots);
+				if (values == null)
+					return;
+
+				// the slots that were written hold strings: clear them so nothing stays alive through the pool
+				Array.Clear(values, 0, Math.Min(usedSlots, values.Length));
+				ArrayPool<System.String>.Shared.Return(values);
 				values = null;
 			}
 			
