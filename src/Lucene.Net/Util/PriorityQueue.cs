@@ -33,10 +33,11 @@ namespace Lucene.Net.Util
     //       I only see a non-nullable type used in PriorityQueue in the tests.  may be possible to re-write tests to
     //       use an IComparable class, and this can be changed back to constraining on class, to return null, or should
     //       we leave as is?
-	public abstract class PriorityQueue<T> //where T : class
+	public abstract class PriorityQueue<T> : System.IDisposable //where T : class
 	{
 		private int size;
 		private int maxSize;
+		private bool pooled;
 		protected internal T[] heap;
 		
 		/// <summary>Determines the ordering of objects in this priority queue.  Subclasses
@@ -144,6 +145,43 @@ namespace Lucene.Net.Util
 			heap[size] = element;
 			UpHeap();
 			return heap[1];
+		}
+
+		/// <summary> Like <see cref="Initialize(int)"/>, but the heap is rented from a pool instead of being allocated,
+		/// and goes back to it when the queue is disposed. Use it for queues that are created per search and sized by
+		/// the number of hits the search may return, so one search after another reuses the same buffers instead of
+		/// allocating and discarding a large array each time. A subclass that supplies sentinel objects gets them, as
+		/// with <see cref="Initialize(int)"/>.
+		/// </summary>
+		protected internal void InitializePooled(int maxSize)
+		{
+			size = 0;
+			this.maxSize = maxSize;
+			pooled = true;
+			// the heap is 1-based, so holding maxSize elements takes maxSize + 1 slots; guard the int.MaxValue bound
+			heap = PooledArray<T>.Rent(maxSize == System.Int32.MaxValue ? System.Int32.MaxValue : maxSize + 1);
+			// sentinels fill the slots up to maxSize only: the pool may hand out a larger array than asked for
+			T sentinel = SentinelObject;
+			if (sentinel != null)
+			{
+				heap[1] = sentinel;
+				for (int i = 2; i <= maxSize; i++)
+				{
+					heap[i] = SentinelObject;
+				}
+				size = maxSize;
+			}
+		}
+
+		/// <summary> Returns a pooled heap to its pool. A heap allocated by <see cref="Initialize(int)"/> has nothing to release. </summary>
+		public virtual void Dispose()
+		{
+			if (pooled == false || heap == null)
+				return;
+
+			// only slots 1..size can still hold references: Pop clears the slot it vacates and Add writes at size
+			PooledArray<T>.ReturnWithClearing(heap, size + 1);
+			heap = null;
 		}
 
         /// <summary> Adds an Object to a PriorityQueue in log(size) time.

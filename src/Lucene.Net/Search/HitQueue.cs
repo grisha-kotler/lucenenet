@@ -55,8 +55,8 @@ namespace Lucene.Net.Search
 		/// }
         /// </code>
 		/// 
-		/// <p/><b>NOTE</b>: This class pre-allocate a full array of
-		/// length <c>size</c>.
+		/// <p/><b>NOTE</b>: This class rents an array of length <c>size</c> from a pool
+		/// and returns it when the queue is disposed.
 		/// 
 		/// </summary>
 		/// <param name="size">the requested size of this queue.
@@ -68,7 +68,7 @@ namespace Lucene.Net.Search
 		public /*internal*/ HitQueue(int size, bool prePopulate)
 		{
 			this.prePopulate = prePopulate;
-			Initialize(size);
+			InitializePooled(size);
 		}
 		
 		// Returns null if prePopulate is false.

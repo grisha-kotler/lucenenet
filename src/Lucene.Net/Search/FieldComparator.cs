@@ -82,7 +82,7 @@ namespace Lucene.Net.Search
 	/// <b>NOTE:</b> This API is experimental and might change in
 	/// incompatible ways in the next release.
 	/// </summary>
-	public abstract class FieldComparator
+	public abstract class FieldComparator : IDisposable
 	{
         /// <summary> Compare hit at slot1 with hit at slot2.
         /// 
@@ -172,6 +172,13 @@ namespace Lucene.Net.Search
 	    /// </returns>
 	    public abstract IComparable this[int slot] { get; }
 
+	    /// <summary> Releases the per-slot storage. Comparators rent their slot arrays from a pool, and the hit
+	    /// queue that owns them disposes them once the results have been read out.
+	    /// </summary>
+	    public virtual void Dispose()
+	    {
+	    }
+
 	    /// <summary>Parses field's values as byte (using <see cref="FieldCache.GetBytes(Lucene.Net.Index.IndexReader,string)" />
 		/// and sorts by ascending value 
 		/// </summary>
@@ -185,7 +192,7 @@ namespace Lucene.Net.Search
 			
 			internal ByteComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = new sbyte[numHits];
+				values = PooledArray<sbyte>.Rent(numHits);
 				this.field = field;
 				this.parser = (ByteParser) parser;
 			}
@@ -203,6 +210,12 @@ namespace Lucene.Net.Search
 			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
+			}
+			
+			public override void  Dispose()
+			{
+				PooledArray<sbyte>.Return(values);
+				values = null;
 			}
 			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
@@ -230,7 +243,7 @@ namespace Lucene.Net.Search
 			
 			internal DocComparator(int numHits)
 			{
-				docIDs = new int[numHits];
+				docIDs = PooledArray<int>.Rent(numHits);
 			}
 			
 			public override int Compare(int slot1, int slot2)
@@ -248,6 +261,12 @@ namespace Lucene.Net.Search
 			public override void  Copy(int slot, int doc, IState state)
 			{
 				docIDs[slot] = docBase + doc;
+			}
+			
+			public override void  Dispose()
+			{
+				PooledArray<int>.Return(docIDs);
+				docIDs = null;
 			}
 			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
@@ -282,7 +301,7 @@ namespace Lucene.Net.Search
 			
 			internal DoubleComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = new double[numHits];
+				values = PooledArray<double>.Rent(numHits);
 				this.field = field;
 				this.parser = (DoubleParser) parser;
 			}
@@ -327,6 +346,12 @@ namespace Lucene.Net.Search
 				values[slot] = currentReaderValues[doc];
 			}
 			
+			public override void  Dispose()
+			{
+				PooledArray<double>.Return(values);
+				values = null;
+			}
+			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetDoubles(reader, field, parser, state);
@@ -356,7 +381,7 @@ namespace Lucene.Net.Search
 			
 			internal FloatComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = new float[numHits];
+				values = PooledArray<float>.Rent(numHits);
 				this.field = field;
 				this.parser = (FloatParser) parser;
 			}
@@ -405,6 +430,12 @@ namespace Lucene.Net.Search
 				values[slot] = currentReaderValues[doc];
 			}
 			
+			public override void  Dispose()
+			{
+				PooledArray<float>.Return(values);
+				values = null;
+			}
+			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetFloats(reader, field, parser, state);
@@ -434,7 +465,7 @@ namespace Lucene.Net.Search
 			
 			internal IntComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = new int[numHits];
+				values = PooledArray<int>.Rent(numHits);
 				this.field = field;
 				this.parser = (IntParser) parser;
 			}
@@ -487,6 +518,12 @@ namespace Lucene.Net.Search
 				values[slot] = currentReaderValues[doc];
 			}
 			
+			public override void  Dispose()
+			{
+				PooledArray<int>.Return(values);
+				values = null;
+			}
+			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetInts(reader, field, parser, state);
@@ -516,7 +553,7 @@ namespace Lucene.Net.Search
 			
 			internal LongComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = new long[numHits];
+				values = PooledArray<long>.Rent(numHits);
 				this.field = field;
 				this.parser = (LongParser) parser;
 			}
@@ -565,6 +602,12 @@ namespace Lucene.Net.Search
 				values[slot] = currentReaderValues[doc];
 			}
 			
+			public override void  Dispose()
+			{
+				PooledArray<long>.Return(values);
+				values = null;
+			}
+			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetLongs(reader, field, parser, state);
@@ -596,7 +639,7 @@ namespace Lucene.Net.Search
 			
 			internal RelevanceComparator(int numHits)
 			{
-				scores = new float[numHits];
+				scores = PooledArray<float>.Rent(numHits);
 			}
 			
 			public override int Compare(int slot1, int slot2)
@@ -615,6 +658,12 @@ namespace Lucene.Net.Search
 			public override void  Copy(int slot, int doc, IState state)
 			{
 				scores[slot] = scorer.Score(state);
+			}
+			
+			public override void  Dispose()
+			{
+				PooledArray<float>.Return(scores);
+				scores = null;
 			}
 			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
@@ -652,7 +701,7 @@ namespace Lucene.Net.Search
 			
 			internal ShortComparator(int numHits, System.String field, Lucene.Net.Search.Parser parser)
 			{
-				values = new short[numHits];
+				values = PooledArray<short>.Rent(numHits);
 				this.field = field;
 				this.parser = (ShortParser) parser;
 			}
@@ -670,6 +719,12 @@ namespace Lucene.Net.Search
 			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
+			}
+			
+			public override void  Dispose()
+			{
+				PooledArray<short>.Return(values);
+				values = null;
 			}
 			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
@@ -695,6 +750,7 @@ namespace Lucene.Net.Search
 		{
 			
 			private System.String[] values;
+			private int usedSlots; // slots that hold a reference and must be cleared before the array goes back to the pool
 			private System.String[] currentReaderValues;
 			private System.String field;
 			internal System.Globalization.CompareInfo collator;
@@ -702,7 +758,7 @@ namespace Lucene.Net.Search
 			
 			internal StringComparatorLocale(int numHits, System.String field, System.Globalization.CultureInfo locale)
 			{
-				values = new System.String[numHits];
+				values = PooledArray<System.String>.Rent(numHits);
 				this.field = field;
 				collator = locale.CompareInfo;
 			}
@@ -747,6 +803,14 @@ namespace Lucene.Net.Search
 			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
+				if (slot >= usedSlots)
+					usedSlots = slot + 1;
+			}
+			
+			public override void  Dispose()
+			{
+				PooledArray<System.String>.ReturnWithClearing(values, usedSlots);
+				values = null;
 			}
 			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
@@ -795,9 +859,9 @@ namespace Lucene.Net.Search
 			
 			public StringOrdValComparator(int numHits, System.String field, int sortPos, bool reversed)
 			{
-				ords = new int[numHits];
-                values = new UnmanagedStringArray.UnmanagedString[numHits];
-				readerGen = new int[numHits];
+				ords = PooledArray<int>.Rent(numHits);
+                values = PooledArray<UnmanagedStringArray.UnmanagedString>.Rent(numHits);
+				readerGen = PooledArray<int>.Rent(numHits);
 				this.sortPos = sortPos;
 				this.reversed = reversed;
 				this.field = field;
@@ -908,6 +972,16 @@ namespace Lucene.Net.Search
 				readerGen[slot] = currentReaderGen;
 			}
 			
+			public override void  Dispose()
+			{
+				PooledArray<int>.Return(ords);
+				ords = null;
+				PooledArray<UnmanagedStringArray.UnmanagedString>.Return(values);
+				values = null;
+				PooledArray<int>.Return(readerGen);
+				readerGen = null;
+			}
+			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				StringIndex currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, field, state);
@@ -977,13 +1051,14 @@ namespace Lucene.Net.Search
 		{
 			
 			private System.String[] values;
+			private int usedSlots; // slots that hold a reference and must be cleared before the array goes back to the pool
 			private System.String[] currentReaderValues;
 			private System.String field;
 			private System.String bottom;
 			
 			internal StringValComparator(int numHits, System.String field)
 			{
-				values = new System.String[numHits];
+				values = PooledArray<System.String>.Rent(numHits);
 				this.field = field;
 			}
 			
@@ -1028,6 +1103,14 @@ namespace Lucene.Net.Search
 			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
+				if (slot >= usedSlots)
+					usedSlots = slot + 1;
+			}
+			
+			public override void  Dispose()
+			{
+				PooledArray<System.String>.ReturnWithClearing(values, usedSlots);
+				values = null;
 			}
 			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
